@@ -1,0 +1,21 @@
+# Python / Backend (server/)
+server/venv/
+server/__pycache__/
+server/*.pyc
+server/*.log
+server/.env*
+
+# Node.js / Frontend (client/)
+client/node_modules/
+client/dist/
+client/*.log
+client/.env*
+client/.DS_Store
+
+# IDE / Editor specific
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db
