@@ -2,8 +2,7 @@
 
 A full-stack web application designed for detailed sentiment analysis. This tool allows users to analyze text sentiment by either uploading a CSV file or inputting text directly. It features a real-time progress bar, dynamic visualizations, and powerful filtering options, all powered by a FastAPI backend and a Hugging Face transformer model.
 
-**(IMPORTANT: Yahaan apne project ka ek screenshot ya GIF add karein\!)**
-`![Project Demo](link-to-your-demo-gif-or-screenshot.png)`
+![alt text](image.png)
 
 ## ✨ Key Features
 
