@@ -1,7 +1,6 @@
-import { useState, useMemo, useRef } from "react"; // <-- NEW: useEffect import
+import { useState, useMemo, useRef } from "react";
 import axios from "axios";
 
-// --- Components ---
 import Header from "./components/sentiment/Header";
 import AnalysisModeTabs from "./components/sentiment/AnalysisModeTabs";
 import FileUpload from "./components/sentiment/FileUpload";
@@ -10,20 +9,24 @@ import ErrorDisplay from "./components/sentiment/ErrorDisplay";
 import FileResults from "./components/sentiment/FileResults";
 import SingleTextResult from "./components/sentiment/SingleTextResult";
 
-// --- Types & Utils ---
 import type {
   FileSentimentResult,
   SentimentResult,
   ChartData,
 } from "./components/sentiment/types";
 
-// WebSocket URL
+/**
+ * Dynamically sets the WebSocket URL based on the environment.
+ * Uses 'ws://' for localhost and 'wss://' (secure) for production.
+ */
 const WS_URL =
   window.location.hostname === "localhost"
     ? "ws://localhost:8000/ws/analyze/"
     : "wss://YOUR_RENDER_BACKEND_URL.onrender.com/ws/analyze/";
 
-// --- NEW: WebSocket Connection Status Type ---
+/**
+ * Represents the different states of the WebSocket connection.
+ */
 type ConnectionStatus =
   | "idle"
   | "connecting"
@@ -31,17 +34,18 @@ type ConnectionStatus =
   | "error"
   | "closed";
 
+/**
+ * The main application component.
+ * Manages all application state, event handlers, and API/WebSocket logic.
+ */
 function App() {
   // === STATE MANAGEMENT ===
 
-  // Common States
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Tab State
   const [analysisMode, setAnalysisMode] = useState<"file" | "text">("file");
 
-  // File Upload States
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileResults, setFileResults] = useState<FileSentimentResult>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,14 +54,12 @@ function App() {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [selectedColumn, setSelectedColumn] = useState<string>("");
 
-  // --- NEW: Connection Status State ---
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("idle");
 
-  // WebSocket connection ref
+  // Holds the WebSocket instance, persisting across renders.
   const ws = useRef<WebSocket | null>(null);
 
-  // Single Text States
   const [singleText, setSingleText] = useState("");
   const [singleResult, setSingleResult] = useState<SentimentResult | null>(
     null
@@ -65,9 +67,12 @@ function App() {
 
   // === API & EVENT HANDLERS ===
 
-  // Common Error Handler
+  /**
+   * A centralized error handler for API calls (Axios) and other errors.
+   * Sets the 'error' state to display a user-friendly message.
+   */
   const handleApiError = (err: unknown) => {
-    /* ... (same) ... */ console.error("API Error:", err);
+    console.error("API Error:", err);
     if (axios.isAxiosError(err) && err.response) {
       if (err.response.data && err.response.data.error) {
         setError(err.response.data.error);
@@ -79,12 +84,13 @@ function App() {
     }
   };
 
-  // File select handler (Same as before)
+  /**
+   * Handles the 'onChange' event for the file input.
+   * Resets state, reads the selected file, and parses the first line
+   * to extract CSV headers and auto-select a likely column.
+   */
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    /* ... (same) ... */ if (
-      event.target.files &&
-      event.target.files.length > 0
-    ) {
+    if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       setSelectedFile(file);
       setError(null);
@@ -130,7 +136,15 @@ function App() {
     }
   };
 
-  // File Upload (WebSocket Logic - UPDATED with connection status)
+  /**
+   * Initiates the file analysis via WebSocket.
+   * 1. Resets state and sets status to "connecting".
+   * 2. Reads the file content.
+   * 3. Establishes a WebSocket connection.
+   * 4. Sends the file content and selected column on 'onopen'.
+   * 5. Listens for 'onmessage' events (info, progress, complete, error).
+   * 6. Handles 'onerror' and 'onclose' events to update state and clean up.
+   */
   const handleAnalyzeFileClick = () => {
     if (!selectedFile) {
       setError("Please select a file first.");
@@ -150,9 +164,8 @@ function App() {
     setFileResults([]);
     setCurrentPage(1);
     setProgress(0);
-    // --- NEW: Set connecting status ---
     setConnectionStatus("connecting");
-    setProgressMessage("Connecting to server..."); // Initial message
+    setProgressMessage("Connecting to server...");
 
     const reader = new FileReader();
     reader.readAsText(selectedFile);
@@ -169,7 +182,6 @@ function App() {
       ws.current = new WebSocket(WS_URL);
 
       ws.current.onopen = () => {
-        // --- NEW: Set connected status ---
         setConnectionStatus("connected");
         setProgressMessage("Uploading file to server...");
         const payload = { columnName: selectedColumn, csvData: fileContent };
@@ -209,7 +221,6 @@ function App() {
       ws.current.onerror = () => {
         setError("WebSocket connection error. Check if backend is running.");
         setLoading(false);
-        // --- NEW: Set error status ---
         setConnectionStatus("error");
       };
 
@@ -218,7 +229,6 @@ function App() {
         if (loading) {
           setLoading(false);
         }
-        // --- NEW: Set closed status ---
         // Avoid overwriting error state
         if (connectionStatus !== "error") {
           setConnectionStatus("closed");
@@ -234,9 +244,12 @@ function App() {
     };
   };
 
-  // Single Text API call (Same as before)
+  /**
+   * Initiates the single text analysis via a standard HTTP POST request.
+   * Uses an Axios client and the 'handleApiError' helper.
+   */
   const handleAnalyzeTextClick = async () => {
-    /* ... (same) ... */ if (!singleText.trim()) {
+    if (!singleText.trim()) {
       setError("Please enter some text to analyze.");
       return;
     }
@@ -256,23 +269,23 @@ function App() {
     }
   };
 
-  // Tab change handler (UPDATED: Will not clear results anymore)
+  /**
+   * Handles switching between 'file' and 'text' analysis modes.
+   * Resets errors, progress, and connection status.
+   * Closes any active WebSocket connection.
+   * Does NOT clear results or inputs, allowing users to switch back.
+   */
   const changeMode = (mode: "file" | "text") => {
     setAnalysisMode(mode);
-    // Only reset the error and progress (when tab switches)
     setError(null);
     setProgress(0);
     setProgressMessage("");
-    // It's also necessary to reset the connection status
     setConnectionStatus("idle");
 
     // Let's also reset the page when coming to the file tab
     if (mode === "file") {
       setCurrentPage(1);
     }
-
-    // Don't touch the input states (selectedFile, csvHeaders, selectedColumn, singleText)
-    // Don't touch the result states (fileResults, singleResult) either
 
     // If the WebSocket was running, close it
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
@@ -281,9 +294,13 @@ function App() {
     }
   };
 
-  // Data Computation (Same as before)
+  /**
+   * Memoized calculation to transform the raw file results array
+   * into a data structure suitable for Recharts (Pie/Bar charts).
+   * Re-calculates only when 'fileResults' changes.
+   */
   const chartData = useMemo((): ChartData[] => {
-    /* ... (same) ... */ if (fileResults.length === 0) return [];
+    if (fileResults.length === 0) return [];
     const counts = { positive: 0, negative: 0, neutral: 0, unknown: 0 };
     fileResults.forEach((res) => {
       counts[res.sentiment]++;
@@ -315,7 +332,6 @@ function App() {
             csvHeaders={csvHeaders}
             selectedColumn={selectedColumn}
             onColumnChange={setSelectedColumn}
-            // --- NEW: Pass connection status ---
             connectionStatus={connectionStatus}
           />
         )}

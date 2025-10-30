@@ -1,17 +1,25 @@
 import React from "react";
 
-// Defining the props for this component
+/**
+ * Defines the props for the SingleTextAnalyzer component.
+ */
 type SingleTextAnalyzerProps = {
+  /** Indicates if an analysis is in progress. */
   loading: boolean;
+  /** The text content to be analyzed. */
   text: string;
+  /** Callback function to update the text content. */
   onTextChange: (text: string) => void;
+  /** Callback function to initiate the analysis. */
   onAnalyzeClick: () => void;
 };
 
-// --- NEW: Spinner SVG Component ---
+/**
+ * A simple SVG spinning loader icon.
+ */
 const SpinnerIcon = () => (
   <svg
-    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" // Adjust size and margin as needed
+    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -32,6 +40,10 @@ const SpinnerIcon = () => (
   </svg>
 );
 
+/**
+ * A component containing a textarea for text input and a button
+ * to trigger sentiment analysis.
+ */
 const SingleTextAnalyzer: React.FC<SingleTextAnalyzerProps> = ({
   loading,
   text,
@@ -49,11 +61,11 @@ const SingleTextAnalyzer: React.FC<SingleTextAnalyzerProps> = ({
         className="w-full p-4 bg-slate-900/50 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
       />
       <button
-        className="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all duration-300 disabled:opacity-50 flex items-center justify-center shadow-lg hover:shadow-xl shadow-blue-500/30 hover:shadow-blue-500/40 disabled:shadow-none" // <-- NEW: flex added
+        className="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all duration-300 disabled:opacity-50 flex items-center justify-center shadow-lg hover:shadow-xl shadow-blue-500/30 hover:shadow-blue-500/40 disabled:shadow-none"
         disabled={!text.trim() || loading}
         onClick={onAnalyzeClick}
       >
-        {/* --- NEW: Conditional Rendering with Spinner --- */}
+        {/* Show spinner and "Analyzing..." text when loading, otherwise show "Analyze Text" */}
         {loading ? (
           <>
             <SpinnerIcon />

@@ -1,25 +1,37 @@
 import React from "react";
 
-// --- NEW: Need to import type from App.tsx ---
-// (We will export this in App.tsx in the next step)
+// Assuming ConnectionStatus is exported from App.tsx or a types file
 import type { ConnectionStatus } from "../../App"; // Adjust path if needed
 
-// Defining the necessary props for this component
+/**
+ * Defines the props for the FileUpload component.
+ */
 type FileUploadProps = {
+  /** Indicates if an analysis is in progress. */
   loading: boolean;
+  /** The file selected by the user. */
   selectedFile: File | null;
+  /** Callback for when a new file is selected. */
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Callback to initiate the analysis. */
   onAnalyzeClick: () => void;
+  /** The current progress percentage (0-100). */
   progress: number;
+  /** A message to display during loading/progress. */
   progressMessage: string;
+  /** List of headers found in the CSV file. */
   csvHeaders: string[];
+  /** The currently selected CSV column to analyze. */
   selectedColumn: string;
+  /** Callback for when the column selection changes. */
   onColumnChange: (columnName: string) => void;
-  // --- NEW PROP ---
+  /** The current status of the model/backend connection. */
   connectionStatus: ConnectionStatus;
 };
 
-// --- NEW: Simple Spinner for Connecting ---
+/**
+ * A simple SVG spinning loader component.
+ */
 const SimpleSpinner = () => (
   <svg
     className="animate-spin h-5 w-5 text-blue-400 mr-2"
@@ -43,6 +55,10 @@ const SimpleSpinner = () => (
   </svg>
 );
 
+/**
+ * Handles the file selection, column selection, and displays loading/progress
+ * UI for file analysis.
+ */
 const FileUpload: React.FC<FileUploadProps> = ({
   loading,
   selectedFile,
@@ -61,33 +77,30 @@ const FileUpload: React.FC<FileUploadProps> = ({
       <label
         htmlFor="csv-upload"
         className={`flex flex-col items-center justify-center w-full min-h-64 h-auto border-2 border-slate-600 border-dashed rounded-xl cursor-pointer bg-slate-900/50 hover:bg-slate-800/60 transition-colors ${
-          // min-h set
           loading ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
         {/* Show the name of the selected file */}
         {selectedFile && !loading && (
           <div className="text-center p-4">
-            {" "}
-            {/* Added padding */}
             <p className="text-lg font-semibold text-green-400">
               File Selected:
             </p>
             <p className="text-md text-slate-200 break-all">
               {selectedFile.name}
-            </p>{" "}
-            {/* Added break-all */}
+            </p>
             <p className="text-xs text-slate-400 mt-4">
               Click again to change file
             </p>
           </div>
         )}
 
-        {/* --- UPDATED Loading UI --- */}
+        {/* --- Loading/Progress UI --- */}
         {loading && (
           <div className="w-full px-10 text-center">
             {/* Conditional Rendering based on connectionStatus */}
             {connectionStatus === "connecting" ? (
+              // Show a simple spinner while connecting
               <div className="flex items-center justify-center">
                 <SimpleSpinner />
                 <p className="text-lg font-semibold text-blue-300">
@@ -95,6 +108,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 </p>
               </div>
             ) : (
+              // Show the full progress bar once connected and processing
               <>
                 {/* Progress Message */}
                 <p className="text-lg font-semibold text-blue-300 mb-4">
@@ -116,12 +130,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
             )}
           </div>
         )}
-        {/* --- LOADING UI END --- */}
+        {/* --- End Loading/Progress UI --- */}
 
         {/* Show the default upload icon */}
         {!selectedFile && !loading && (
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            {/* ... (SVG and text same) ... */}
             <svg
               className="w-10 h-10 mb-4 text-slate-400"
               aria-hidden="true"
@@ -156,39 +169,34 @@ const FileUpload: React.FC<FileUploadProps> = ({
       </label>
       {/* --- File Dropzone End --- */}
 
-      {/* --- Column Selection Dropdown (Same as before) --- */}
+      {/* --- Column Selection Dropdown --- */}
       {selectedFile && !loading && csvHeaders.length > 0 && (
         <div className="w-full mt-6">
-          {" "}
           <label
             htmlFor="column-select"
             className="block text-sm font-medium text-slate-300 mb-2"
           >
-            {" "}
-            Select the column to analyze:{" "}
-          </label>{" "}
+            Select the column to analyze:
+          </label>
           <select
             id="column-select"
             value={selectedColumn}
             onChange={(e) => onColumnChange(e.target.value)}
             className="w-full p-3 bg-slate-900/50 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           >
-            {" "}
             <option value="" disabled>
-              {" "}
-              -- Select a column --{" "}
-            </option>{" "}
+              -- Select a column --
+            </option>
             {csvHeaders.map((header) => (
               <option key={header} value={header}>
-                {" "}
-                {header}{" "}
+                {header}
               </option>
-            ))}{" "}
-          </select>{" "}
+            ))}
+          </select>
         </div>
       )}
 
-      {/* --- Analyze Button (Same as before) --- */}
+      {/* --- Analyze Button --- */}
       <button
         className="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl shadow-blue-500/30 hover:shadow-blue-500/40 disabled:shadow-none"
         disabled={!selectedFile || !selectedColumn || loading}
