@@ -1,7 +1,6 @@
 import React from "react";
 
-// Assuming ConnectionStatus is exported from App.tsx or a types file
-import type { ConnectionStatus } from "../../App"; // Adjust path if needed
+import type { ConnectionStatus } from "../../App";
 
 /**
  * Defines the props for the FileUpload component.
@@ -11,8 +10,6 @@ type FileUploadProps = {
   loading: boolean;
   /** The file selected by the user. */
   selectedFile: File | null;
-  /** Callback for when a new file is selected. */
-  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   /** Callback to initiate the analysis. */
   onAnalyzeClick: () => void;
   /** The current progress percentage (0-100). */
@@ -27,6 +24,13 @@ type FileUploadProps = {
   onColumnChange: (columnName: string) => void;
   /** The current status of the model/backend connection. */
   connectionStatus: ConnectionStatus;
+
+  // --- PROPS UPDATED ---
+  /** Callback function to process a new file (from click or drop). */
+  onFileProcess: (file: File | null) => void;
+  /** Callback function to set an error message in the parent. */
+  onError: (message: string | null) => void;
+  // --- END PROPS UPDATE ---
 };
 
 /**
@@ -62,14 +66,15 @@ const SimpleSpinner = () => (
 const FileUpload: React.FC<FileUploadProps> = ({
   loading,
   selectedFile,
-  onFileChange,
   onAnalyzeClick,
   progress,
   progressMessage,
   csvHeaders,
   selectedColumn,
   onColumnChange,
-  connectionStatus, // <-- Received new prop
+  connectionStatus,
+  onFileProcess, // <-- New prop
+  onError, // <-- New prop
 }) => {
   return (
     <div className="flex flex-col items-center justify-center w-full">
@@ -79,6 +84,26 @@ const FileUpload: React.FC<FileUploadProps> = ({
         className={`flex flex-col items-center justify-center w-full min-h-64 h-auto border-2 border-slate-600 border-dashed rounded-xl cursor-pointer bg-slate-900/50 hover:bg-slate-800/60 transition-colors ${
           loading ? "opacity-50 cursor-not-allowed" : ""
         }`}
+        // --- DRAG/DROP HANDLERS ADDED ---
+        onDragOver={(e) => {
+          e.preventDefault();
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (loading) return;
+
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            // File type check
+            if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+              onFileProcess(file);
+            } else {
+              onError("Invalid file type. Please drop a .csv file.");
+            }
+            e.dataTransfer.clearData();
+          }
+        }}
+        // --- END HANDLERS ---
       >
         {/* Show the name of the selected file */}
         {selectedFile && !loading && (
@@ -163,7 +188,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
           type="file"
           className="hidden"
           accept=".csv"
-          onChange={onFileChange}
+          // --- ONCHANGE UPDATED ---
+          onChange={(e) => {
+            const file =
+              e.target.files && e.target.files.length > 0
+                ? e.target.files[0]
+                : null;
+            onFileProcess(file); // 'onFileChange' ki jagah 'onFileProcess' call karo
+            e.target.value = ""; // Input ko reset karo taaki same file dubara select ho sake
+          }}
+          // --- END UPDATE ---
           disabled={loading}
         />
       </label>
@@ -171,7 +205,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
       {/* --- Column Selection Dropdown --- */}
       {selectedFile && !loading && csvHeaders.length > 0 && (
-        <div className="w-full mt-6">
+        <div className="w-full mt-6 relative z-10">
           <label
             htmlFor="column-select"
             className="block text-sm font-medium text-slate-300 mb-2"
@@ -182,13 +216,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
             id="column-select"
             value={selectedColumn}
             onChange={(e) => onColumnChange(e.target.value)}
-            className="w-full p-3 bg-slate-900/50 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                       hover:border-blue-500 appearance-none cursor-pointer
+                       "
           >
-            <option value="" disabled>
+            <option value="" disabled className="bg-slate-800 text-slate-400">
               -- Select a column --
             </option>
             {csvHeaders.map((header) => (
-              <option key={header} value={header}>
+              <option
+                key={header}
+                value={header}
+                className="bg-slate-800 text-slate-200 hover:bg-slate-600"
+              >
                 {header}
               </option>
             ))}

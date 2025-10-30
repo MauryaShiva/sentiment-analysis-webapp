@@ -85,13 +85,18 @@ function App() {
   };
 
   /**
-   * Handles the 'onChange' event for the file input.
-   * Resets state, reads the selected file, and parses the first line
+   * Processes a newly selected file (from click or drag-and-drop).
+   * Resets state, reads the file, and parses the first line
    * to extract CSV headers and auto-select a likely column.
    */
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
+  const processNewFile = (file: File | null) => {
+    if (file) {
+      // Check for file type (security measure)
+      if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+        setError("Invalid file type. Please upload a .csv file.");
+        return;
+      }
+
       setSelectedFile(file);
       setError(null);
       setFileResults([]);
@@ -100,9 +105,11 @@ function App() {
       setProgressMessage("");
       setCsvHeaders([]);
       setSelectedColumn("");
+
       const slice = file.slice(0, 1024);
       const reader = new FileReader();
       reader.readAsText(slice);
+
       reader.onload = (e) => {
         const fileContent = e.target?.result as string;
         if (fileContent) {
@@ -117,6 +124,7 @@ function App() {
             "comment",
             "review_text",
             "Tweet",
+            "sentence", // Added 'sentence'
           ];
           const foundHeader = headers.find((h) =>
             commonHeaders.includes(h.toLowerCase())
@@ -130,6 +138,7 @@ function App() {
         setError("Error reading file headers.");
       };
     } else {
+      // Handle deselection
       setSelectedFile(null);
       setCsvHeaders([]);
       setSelectedColumn("");
@@ -325,7 +334,8 @@ function App() {
           <FileUpload
             loading={loading}
             selectedFile={selectedFile}
-            onFileChange={handleFileChange}
+            onFileProcess={processNewFile}
+            onError={setError}
             onAnalyzeClick={handleAnalyzeFileClick}
             progress={progress}
             progressMessage={progressMessage}

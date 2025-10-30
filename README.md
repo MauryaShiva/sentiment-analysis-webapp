@@ -97,6 +97,10 @@ Your React app is now running at `http://localhost:5173`.
 
 **Important:** The frontend is configured to connect to `ws://localhost:8000/ws/analyze/` for local development.
 
+## 🧪 Test Data
+
+[**Click here to download a sample `sentimental.csv` file for testing.**](./sentimental.csv)
+
 ## 🖥️ API Endpoints
 
 - **`POST /analyze-text/`**: Analyzes a single JSON text input.
